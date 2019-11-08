@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import sys
-import networkx as nx
 
 class RandomWalk:
     def __init__(self, graph, is_directed):
@@ -86,3 +85,7 @@ def alias_draw(J, q):
         return rand_index
     else: 
         return J[rand_index]
+
+if __name__ == '__main__':
+    a, b = alias_setup([0.2, 0.3, 0.25, 0.25])
+    print(a, b)
