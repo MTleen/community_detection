@@ -10,8 +10,8 @@ from tensorflow.python import keras
 from tensorflow.python.keras import layers
 import networkx as nx
 import scipy.io as sio
-from random_walk import RandomWalk
-from embedding_model import EmbeddingModel
+from expriments.community_detection.random_walk import RandomWalk
+from expriments.community_detection.embedding_model import EmbeddingModel
 import os, sys
 import argparse
 
