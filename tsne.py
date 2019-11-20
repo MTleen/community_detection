@@ -170,9 +170,9 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='通过 tsne 可视化网络嵌入')
-    parser.add_argument('--emb', default='result/football_embedding.npy',
+    parser.add_argument('--emb', default='embedding/football_embedding.npy',
                         help='网络嵌入数据文件')
-    parser.add_argument('--label', default='data/football/football.gml',
+    parser.add_argument('--label', default='data/football.gml',
                         help='标签数据')
     # parser.add_argument('--label_format', default='group',
     #                     help='the format in the .mat data')
@@ -182,8 +182,9 @@ if __name__ == "__main__":
                         help='原始嵌入特征维度')
     parser.add_argument('--p', default=30.0, type=float,
                         help='the perplexsity value')
-    parser.add_argument('--result', default='fig/football',
+    parser.add_argument('--embedding', default='fig/football',
                         help='图像存储路径')
+    parser.add_argument('--result', default='./fig/football')
     args = parser.parse_args()
     X = np.load(args.emb)
     # data = sio.loadmat(args.label)
@@ -197,6 +198,7 @@ if __name__ == "__main__":
         value = node_values[node]['value']
         labels_one_hot[i, value] = 1
         labels.append(value)
+    # np.save('./embedding/football_labels.npy', labels)
 
     fig = plt.figure(figsize=(12, 10))
     for i in range(16):

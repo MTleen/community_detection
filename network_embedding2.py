@@ -165,16 +165,29 @@ class Dis:
         self.lap_optimizer = tf.train.RMSPropOptimizer(lr).apply_gradients(zip(grad, tvars))
 
 
+def cal_knn(embedding, k):
+    node_num = embedding.shape[0]
+    if k >= node_num:
+        k = node_num - 1
+    knn_graph = np.zeros([node_num, k + 1], dtype=np.int)
+    for i, node in enumerate(embedding):
+        dis = np.sum((embedding - node) ** 2, axis=1)
+        dis_sorted = np.argsort(dis)
+        knn_graph[i] = dis_sorted[:k + 1]
+    return knn_graph
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--format', default='gml', help='the file format', type=str)
     # 输入目录
-    parser.add_argument('--input', default='football/football.gml', help='the file name', type=str)
-    parser.add_argument('--output', default='./result/football_embedding.npy', help='saved as npy', type=str)
+    parser.add_argument('--dataset', default='football', help='数据集名称', type=str)
+    parser.add_argument('--input', default='football.gml', help='the file name', type=str)
+    parser.add_argument('--output', default='./embedding/football_embedding.npy', help='saved as npy', type=str)
     # 嵌入模型，rnn 或 lstm
     parser.add_argument('--mode', default='lstm', help='which mode will used', type=str)
     # 每个节点游走次数
-    parser.add_argument('--node_num', default=50, help='nums of per node', type=int)
+    parser.add_argument('--node_num', default=100, help='nums of per node', type=int)
     # 随机游走长度
     parser.add_argument('--path_length', default=100, help='length of path', type=int)
     parser.add_argument('--timesteps', default=100, help='length of one sequence', type=int)
@@ -192,7 +205,8 @@ if __name__ == '__main__':
     parser.add_argument('--grad_clip', default=5, help='gradient clipping', type=int)
     parser.add_argument('--gen_epoches', default=5, help='iter nums', type=int)
     parser.add_argument('--dis_epoches', default=5, help='iter nums', type=int)
-    parser.add_argument('--epoches', default=5, help='iter nums', type=int)
+    parser.add_argument('--epoches', default=10, help='iter nums', type=int)
+    parser.add_argument('--k_neighbors', default=200, help='节点 knn 个数', type=int)
     args = parser.parse_args()
 
     # if args.format == 'mat':
@@ -219,6 +233,7 @@ if __name__ == '__main__':
         G = data_2_graph[args.format](os.path.join(data_dir, args.input))
         # 生成邻接矩阵
         nodes = list(G.nodes())
+        node_values = G._node
         adj = np.zeros([len(nodes), len(nodes)])
         edges = G.edges()
         for edge in edges:
@@ -268,4 +283,18 @@ if __name__ == '__main__':
                 feed_dict = {dis.adj: batch_adj, dis.index: np.arange(adj.shape[0])[index:index + args.batches]}
                 lap_loss, _ = sess.run([dis.lap_loss, dis.lap_optimizer], feed_dict=feed_dict)
                 print('lap_loss:', lap_loss)
-    np.save(args.output, sess.run(lstm.embedding))
+
+    network_embedding = sess.run(lstm.embedding)
+    # 提取节点标签
+    labels = []
+    for i, node in enumerate(nodes):
+        value = node_values[node]['value']
+        labels.append(value)
+    # 节点 knn
+    knn_graph = cal_knn(network_embedding, args.k_neighbors)
+    print(knn_graph)
+    np.save(os.path.join('./embedding', args.dataset + '_labels.npy'), labels)
+    np.save(args.output, network_embedding)
+    np.save(os.path.join('./embedding', args.dataset + '_knn_graph.npy'), knn_graph)
+
+
